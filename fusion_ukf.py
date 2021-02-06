@@ -44,5 +44,5 @@ class FusionUKF:
         self.initialized = True
         self.timestamp = timestamp
 
-    def update(self, data, timestamp):
+    def update(self, data):
         pass
