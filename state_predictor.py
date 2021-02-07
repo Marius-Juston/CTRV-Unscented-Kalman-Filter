@@ -14,8 +14,8 @@ class StatePredictor:
         self.N_AUGMENTED = N_AUGMENTED
         self.VAR_SPEED_NOISE = VAR_SPEED_NOISE
         self.VAR_YAW_RATE_NOISE = VAR_YAW_RATE_NOISE
-        self.sigma = np.zeros((NX, N_SIGMA))
 
+        self.sigma = np.zeros((NX, N_SIGMA))
         self.x = np.zeros(NX)
         self.P = np.zeros((NX, N_SIGMA))
 
