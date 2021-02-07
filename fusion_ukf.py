@@ -1,5 +1,9 @@
 import numpy as np
 
+from datapoint import DataPoint
+from measurement_predictor import MeasurementPredictor
+from state_predictor import StatePredictor
+
 
 class FusionUKF:
     def __init__(self) -> None:
@@ -38,11 +42,28 @@ class FusionUKF:
         self.x = np.zeros(self.NX)
         self.P = np.eyes(self.NX)
 
+        self.state_predictor = StatePredictor(self.NX, self.N_SIGMA, self.N_AUGMENTED, self.SPEED_NOISE_VAR,
+                                              self.YAW_RATE_NOISE_VAR, self.SCALE, self.WEIGHTS)
+
+        self.measurement_predictor = MeasurementPredictor(self.UWB_RANGE_VAR)
+
     def initialize(self, x, initial_p, timestamp):
         self.x = x
         self.P = initial_p
         self.initialized = True
         self.timestamp = timestamp
 
-    def update(self, data):
-        pass
+    def update(self, data: DataPoint):
+        predicted_z = None
+        sigma_x = None
+        sigma_z = None
+        S = None
+
+        dt = data.timestamp - self.timestamp  # seconds
+
+        self.state_predictor.process(self.x, self.P, dt)
+        self.x = self.state_predictor.x
+        self.P = self.state_predictor.P
+        sigma_x = self.state_predictor.sigma
+
+        self.measurement_predictor.process(sigma_x, data.data_type)
