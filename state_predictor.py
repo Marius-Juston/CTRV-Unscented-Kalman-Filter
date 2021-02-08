@@ -37,7 +37,7 @@ class StatePredictor:
         for c in range(self.N_AUGMENTED):
             i = c + 1
             augmented_sigma[:, i] = augmented_x + self.SCALE * L[:, c]
-            augmented_sigma[i + self.N_AUGMENTED] = augmented_x - self.SCALE * L[:, c]
+            augmented_sigma[:, i + self.N_AUGMENTED] = augmented_x - self.SCALE * L[:, c]
 
         return augmented_sigma
 
