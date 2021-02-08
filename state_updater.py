@@ -11,7 +11,7 @@ class StateUpdater:
         self.NX = NX
 
     def compute_Tc(self, predicted_x, predicted_z, sigma_x, sigma_z):
-        NZ = predicted_z.size()
+        NZ = predicted_z.size
 
         Tc = np.zeros((self.NX, NZ))
 
@@ -20,7 +20,7 @@ class StateUpdater:
             dx[3] = normalize(dx[3])
             dz = sigma_z[:, i] - predicted_z
 
-            Tc += self.WEIGHTS[i] * np.matmul(dx, dz.transpose())
+            Tc += self.WEIGHTS[i] * np.matmul(np.atleast_2d(dx).transpose(), np.atleast_2d(dz))
 
         return Tc
 
