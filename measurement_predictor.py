@@ -19,7 +19,8 @@ class MeasurementPredictor:
         self.R = None
         self.nz = None
 
-        self.R_UWB = np.array([[UWB_RANGE_VAR]])
+        self.R_UWB = np.array([[UWB_RANGE_VAR, 0],
+                               [0, UWB_RANGE_VAR]])
 
     def initialize(self, sensor_type):
         self.current_type = sensor_type

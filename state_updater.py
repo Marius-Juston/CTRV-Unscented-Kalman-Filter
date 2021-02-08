@@ -20,7 +20,7 @@ class StateUpdater:
             dx[3] = normalize(dx[3])
             dz = sigma_z[:, i] - predicted_z
 
-            Tc += self.WEIGHTS[i] * np.matmul(np.atleast_2d(dx).transpose(), np.atleast_2d(dz))
+            Tc += self.WEIGHTS[i] * np.matmul(dx.reshape((-1, 1)), dz.reshape((1, -1)))
 
         return Tc
 
