@@ -41,7 +41,7 @@ class FusionUKF:
         # -----------------------------------
 
         self.x = np.zeros(self.NX)
-        self.P = np.eyes(self.NX)
+        self.P = np.eye(self.NX)
 
         self.state_predictor = StatePredictor(self.NX, self.N_SIGMA, self.N_AUGMENTED, self.SPEED_NOISE_VAR,
                                               self.YAW_RATE_NOISE_VAR, self.SCALE, self.WEIGHTS)
