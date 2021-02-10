@@ -1,8 +1,6 @@
-import time
-
 import numpy as np
 
-from datapoint import DataPoint, DataType
+from datapoint import DataPoint
 from measurement_predictor import MeasurementPredictor
 from state_predictor import StatePredictor
 from state_updater import StateUpdater
@@ -38,8 +36,11 @@ class FusionUKF:
         # -----------------------------------
 
         # Measurement Uncertainty Settings -----------------------------------
-        self.UWB_RANGE_NOISE = 0.257  # Meters
-        self.UWB_RANGE_VAR = self.UWB_RANGE_NOISE ** 2
+        self.sensor_std = sensor_std
+
+        # self.UWB_RANGE_NOISE = 0.257  # Meters
+        # self.UWB_RANGE_NOISE = 0.15  # Meters
+        # self.UWB_RANGE_VAR = self.UWB_RANGE_NOISE ** 2
         # -----------------------------------
 
         self.x = np.zeros(self.NX)
@@ -48,7 +49,7 @@ class FusionUKF:
         self.state_predictor = StatePredictor(self.NX, self.N_SIGMA, self.N_AUGMENTED, self.SPEED_NOISE_VAR,
                                               self.YAW_RATE_NOISE_VAR, self.SCALE, self.WEIGHTS)
 
-        self.measurement_predictor = MeasurementPredictor(self.UWB_RANGE_VAR, self.N_SIGMA, self.WEIGHTS)
+        self.measurement_predictor = MeasurementPredictor(sensor_std, self.N_SIGMA, self.WEIGHTS)
 
         self.state_updater = StateUpdater(self.NX, self.N_SIGMA, self.WEIGHTS)
 

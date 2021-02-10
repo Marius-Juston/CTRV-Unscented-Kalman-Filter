@@ -46,7 +46,13 @@ def define_test_data():
 if __name__ == '__main__':
     ground_truth, sensor_data = define_test_data()
 
-    filter = FusionUKF()
+    sensor_std = {
+        DataType.UWB: {
+            'std': [0.15, 0.15]
+        }
+    }
+
+    filter = FusionUKF(sensor_std)
 
     ground_xy = np.array([[g.measurement_data[0], g.measurement_data[1]] for g in ground_truth])
     plt.plot(ground_xy[:, 0], ground_xy[:, 1], color=[1, 0, 0, 1])

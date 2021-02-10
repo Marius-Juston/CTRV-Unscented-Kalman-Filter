@@ -4,12 +4,15 @@ from datapoint import DataType
 
 
 class MeasurementPredictor:
-    def __init__(self, UWB_RANGE_VAR, N_SIGMA, WEIGHTS) -> None:
+    def __init__(self, sensor_std, N_SIGMA, WEIGHTS) -> None:
         super().__init__()
+
+        self.sensor_std = sensor_std
+
+        self.compute_R_matrix()
 
         self.WEIGHTS = WEIGHTS
         self.N_SIGMA = N_SIGMA
-        self.UWB_RANGE_VAR = UWB_RANGE_VAR
 
         self.z = None
         self.S = None
@@ -19,19 +22,13 @@ class MeasurementPredictor:
         self.R = None
         self.nz = None
 
-        self.R_UWB = np.array([[UWB_RANGE_VAR, 0],
-                               [0, UWB_RANGE_VAR]])
-
     def initialize(self, sensor_type):
         self.current_type = sensor_type
 
-        if sensor_type == DataType.UWB:
-            self.R = self.R_UWB
-            self.nz = 2
+        self.R = self.sensor_std[sensor_type]["R"]
+        self.nz = len(self.sensor_std[sensor_type]['std'])
 
     def compute_sigma_z(self, sigma_x):
-        THRESHOLD = 1e-4
-
         sigma = np.zeros((self.nz, self.N_SIGMA))
 
         for i in range(self.N_SIGMA):
@@ -66,3 +63,7 @@ class MeasurementPredictor:
         self.sigma_z = self.compute_sigma_z(sigma_x)
         self.z = self.compute_z(self.sigma_z)
         self.S = self.compute_S(self.sigma_z, self.z)
+
+    def compute_R_matrix(self):
+        for value in self.sensor_std:
+            self.sensor_std[value]["R"] = np.diag(np.power(self.sensor_std[value]['std'], 2))
