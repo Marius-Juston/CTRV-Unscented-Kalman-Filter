@@ -32,7 +32,7 @@ class MeasurementPredictor:
         sigma = np.zeros((self.nz, self.N_SIGMA))
 
         for i in range(self.N_SIGMA):
-            if self.current_type == DataType.UWB:
+            if self.current_type == DataType.LIDAR:
                 sigma[0, i] = sigma_x[0, i]  # py
                 sigma[1, i] = sigma_x[1, i]  # px
 

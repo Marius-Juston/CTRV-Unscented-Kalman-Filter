@@ -22,7 +22,7 @@ def define_test_data():
                 val2 = float(line.pop(0))
                 timestamp = float(line.pop(0)) / 1e6
 
-                sensor_data.append(DataPoint(DataType.UWB, np.array([val1, val2]), timestamp))
+                sensor_data.append(DataPoint(DataType.LIDAR, np.array([val1, val2]), timestamp))
             else:
                 line.pop(0)
                 line.pop(0)
@@ -38,7 +38,7 @@ def define_test_data():
 
             v = np.sqrt(vx ** 2 + vy ** 2)
 
-            ground_truth.append(DataPoint(DataType.UWB, np.array([x, y, v, yaw, yaw_rate]), timestamp))
+            ground_truth.append(DataPoint(DataType.LIDAR, np.array([x, y, v, yaw, yaw_rate]), timestamp))
 
     return ground_truth, sensor_data
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     ground_truth, sensor_data = define_test_data()
 
     sensor_std = {
-        DataType.UWB: {
+        DataType.LIDAR: {
             'std': [0.15, 0.15]
         }
     }

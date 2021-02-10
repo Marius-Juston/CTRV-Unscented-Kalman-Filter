@@ -1,5 +1,5 @@
 class DataType:
-    UWB = 1
+    LIDAR = 1
     ODOMETRY = 2
 
 
