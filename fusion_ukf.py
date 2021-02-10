@@ -77,7 +77,7 @@ class FusionUKF:
 
         # MEASUREMENT PREDICTION
         # get predicted measurement, covariance of predicted measurement, predicted sigma points in measurement space
-        self.measurement_predictor.process(sigma_x, data.data_type)
+        self.measurement_predictor.process(sigma_x, data)
         predicted_z = self.measurement_predictor.z
         S = self.measurement_predictor.S
         sigma_z = self.measurement_predictor.sigma_z

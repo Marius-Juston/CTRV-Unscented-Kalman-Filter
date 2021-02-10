@@ -22,19 +22,28 @@ class MeasurementPredictor:
         self.R = None
         self.nz = None
 
-    def initialize(self, sensor_type):
+    def initialize(self, data):
+        sensor_type = data.data_type
+
         self.current_type = sensor_type
 
         self.R = self.sensor_std[sensor_type]["R"]
-        self.nz = len(self.sensor_std[sensor_type]['std'])
+        self.nz = self.sensor_std[sensor_type]['nz']
+
+        if sensor_type == DataType.UWB:
+            self.anchor_pos = data.extra
 
     def compute_sigma_z(self, sigma_x):
         sigma = np.zeros((self.nz, self.N_SIGMA))
 
         for i in range(self.N_SIGMA):
             if self.current_type == DataType.LIDAR:
-                sigma[0, i] = sigma_x[0, i]  # py
-                sigma[1, i] = sigma_x[1, i]  # px
+                sigma[0, i] = sigma_x[0, i]  # px
+                sigma[1, i] = sigma_x[1, i]  # py
+            elif self.current_type == DataType.UWB:
+                distance = np.linalg.norm(sigma_x[:2, i] - self.anchor_pos)
+
+                sigma[0, i] = distance  # px
 
         return sigma
 
@@ -58,8 +67,8 @@ class MeasurementPredictor:
 
         return S
 
-    def process(self, sigma_x, sensor_type):
-        self.initialize(sensor_type)
+    def process(self, sigma_x, data):
+        self.initialize(data)
         self.sigma_z = self.compute_sigma_z(sigma_x)
         self.z = self.compute_z(self.sigma_z)
         self.S = self.compute_S(self.sigma_z, self.z)
