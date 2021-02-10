@@ -83,36 +83,3 @@ class FusionUKF:
         self.nis = self.state_updater.nis
 
         self.timestamp = data.timestamp
-
-
-if __name__ == '__main__':
-    robot = np.array([1, 1, 0.1, 0, 0])
-    inital_p = np.array([
-        [1.1, 0, 0, 0, 0],
-        [0, 1.1, 0, 0, 0],
-        [0, 0, 1, 0, 0],
-        [0, 0, 0, 1, 0],
-        [0, 0, 0, 0, 1],
-    ])
-
-    filter = FusionUKF()
-
-    filter.initialize(robot, inital_p, time.time())
-
-    anchor = np.array([3, 4])
-
-    prev = time.time()
-
-    for i in range(100):
-        c = time.time()
-
-        data = DataPoint(DataType.UWB, robot[:2], c)
-
-        filter.update(data)
-
-        print(robot, filter.x)
-
-        dt = c - prev
-        prev = c
-
-        robot[0] += .1 * dt
