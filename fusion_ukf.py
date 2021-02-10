@@ -9,7 +9,7 @@ from state_updater import StateUpdater
 
 
 class FusionUKF:
-    def __init__(self) -> None:
+    def __init__(self, sensor_std, speed_noise_std=.9, yaw_rate_noise_std=.6) -> None:
         super().__init__()
 
         self.initialized = False
@@ -30,8 +30,8 @@ class FusionUKF:
         # -----------------------------------
 
         # Uncertainty Settings -----------------------------------
-        self.SPEED_NOISE_STD = 0.9
-        self.YAW_RATE_NOISE_STD = 0.9
+        self.SPEED_NOISE_STD = speed_noise_std
+        self.YAW_RATE_NOISE_STD = yaw_rate_noise_std
 
         self.SPEED_NOISE_VAR = self.SPEED_NOISE_STD ** 2
         self.YAW_RATE_NOISE_VAR = self.YAW_RATE_NOISE_STD ** 2
