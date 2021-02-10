@@ -53,12 +53,18 @@ class FusionUKF:
         self.state_updater = StateUpdater(self.NX, self.N_SIGMA, self.WEIGHTS)
 
     def initialize(self, x, initial_p, timestamp):
-        self.x = x
+        self.x[:x.size] = x
         self.P = initial_p
         self.initialized = True
         self.timestamp = timestamp
 
-    def update(self, data: DataPoint):
+    def update(self, data):
+        if self.initialized:
+            self.process(data)
+        else:
+            self.initialize(data.measurement_data, np.eye(self.NX), data.timestamp)
+
+    def process(self, data: DataPoint):
         dt = data.timestamp - self.timestamp  # seconds
 
         # STATE PREDICTION
