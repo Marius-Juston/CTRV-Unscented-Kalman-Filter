@@ -107,7 +107,7 @@ class StatePredictor:
         predicted_P = np.zeros((self.NX, self.NX))
 
         for i in range(self.N_SIGMA):
-            dx = predicted_sigma[:, i] - predicted_x
+            dx = (predicted_sigma[:, i] - predicted_x).reshape((-1, 1))
             dx[3] = normalize(dx[3])
             predicted_P += self.WEIGHTS[i] * np.matmul(dx, dx.transpose())
 
