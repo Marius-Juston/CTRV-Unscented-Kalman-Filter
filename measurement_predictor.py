@@ -59,9 +59,9 @@ class MeasurementPredictor:
         S = np.zeros((self.nz, self.nz))
 
         for i in range(self.N_SIGMA):
-            dz = (sigma[:, i] - z).reshape((-1, 1))
+            dz = sigma[:, i] - z
 
-            S += self.WEIGHTS[i] * np.matmul(dz, dz.transpose())
+            S += self.WEIGHTS[i] * np.outer(dz, dz)
 
         S += self.R
 
