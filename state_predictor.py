@@ -44,54 +44,58 @@ class StatePredictor:
     def predict_sigma(self, augmented_sigma, dt):
         predicted_sigma = np.zeros((self.NX, self.N_SIGMA))
 
-        for i in range(self.N_SIGMA):
-            px = augmented_sigma[0, i]
-            py = augmented_sigma[1, i]
-            speed = augmented_sigma[2, i]
-            yaw = augmented_sigma[3, i]
-            yaw_rate = augmented_sigma[4, i]
-            speed_noise = augmented_sigma[5, i]
-            yaw_rate_noise = augmented_sigma[6, i]
+        px = augmented_sigma[0]
+        py = augmented_sigma[1]
+        speed = augmented_sigma[2]
+        yaw = augmented_sigma[3]
+        yaw_rate = augmented_sigma[4]
+        speed_noise = augmented_sigma[5]
+        yaw_rate_noise = augmented_sigma[6]
 
-            # PREDICT NEXT STEP USING CTRV Model
+        # PREDICT NEXT STEP USING CTRV Model
 
-            cos_yaw = np.cos(yaw)
-            sin_yaw = np.sin(yaw)
-            dt_2 = dt * dt
+        cos_yaw = np.cos(yaw)
+        sin_yaw = np.sin(yaw)
+        dt_2 = dt * dt
 
-            # Acceleration noise
-            p_noise = 0.5 * speed_noise * dt_2
-            y_noise = 0.5 * yaw_rate_noise * dt_2
+        # Acceleration noise
+        p_noise = 0.5 * speed_noise * dt_2
+        y_noise = 0.5 * yaw_rate_noise * dt_2
 
-            # Velocity change
-            d_yaw = yaw_rate * dt
-            d_speed = speed * dt
+        # Velocity change
+        d_yaw = yaw_rate * dt
+        d_speed = speed * dt
 
-            # Predicted speed = constant speed + acceleration noise
-            p_speed = speed + speed_noise * dt
+        # Predicted speed = constant speed + acceleration noise
+        p_speed = speed + speed_noise * dt
 
-            # Predicted yaw
-            p_yaw = yaw + d_yaw + y_noise
+        # Predicted yaw
+        p_yaw = yaw + d_yaw + y_noise
 
-            # Predicted yaw rate
-            p_yaw_rate = yaw_rate + yaw_rate_noise * dt
+        # Predicted yaw rate
+        p_yaw_rate = yaw_rate + yaw_rate_noise * dt
 
-            if abs(yaw_rate) <= self.YAW_RATE_THRESHOLD:
-                p_px = px + d_speed * cos_yaw + p_noise * cos_yaw
-                p_py = py + d_speed * sin_yaw + p_noise * sin_yaw
-            else:
-                k = speed / yaw_rate
-                theta = yaw + d_yaw
-                p_px = px + k * (np.sin(theta) - sin_yaw) + p_noise * cos_yaw
-                p_py = py + k * (cos_yaw - np.cos(theta)) + p_noise * sin_yaw
+        mask = abs(yaw_rate) <= self.YAW_RATE_THRESHOLD
+        mask_n = np.logical_not(mask)
 
-            predicted_sigma[0, i] = p_px
-            predicted_sigma[1, i] = p_py
-            predicted_sigma[2, i] = p_speed
-            predicted_sigma[3, i] = p_yaw
-            predicted_sigma[4, i] = p_yaw_rate
+        p_px = np.empty(self.N_SIGMA)
+        p_py = np.empty(self.N_SIGMA)
 
-            # ------------------
+        p_px[mask] = px[mask] + d_speed[mask] * cos_yaw[mask] + p_noise[mask] * cos_yaw[mask]
+        p_py[mask] = py[mask] + d_speed[mask] * sin_yaw[mask] + p_noise[mask] * sin_yaw[mask]
+
+        k = speed[mask_n] / yaw_rate[mask_n]
+        theta = yaw[mask_n] + d_yaw[mask_n]
+        p_px[mask_n] = px[mask_n] + k * (np.sin(theta) - sin_yaw[mask_n]) + p_noise[mask_n] * cos_yaw[mask_n]
+        p_py[mask_n] = py[mask_n] + k * (cos_yaw[mask_n] - np.cos(theta)) + p_noise[mask_n] * sin_yaw[mask_n]
+
+        predicted_sigma[0] = p_px
+        predicted_sigma[1] = p_py
+        predicted_sigma[2] = p_speed
+        predicted_sigma[3] = p_yaw
+        predicted_sigma[4] = p_yaw_rate
+
+        # ------------------
 
         return predicted_sigma
 
