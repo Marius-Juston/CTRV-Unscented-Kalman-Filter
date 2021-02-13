@@ -31,7 +31,14 @@ class MeasurementPredictor:
         self.nz = self.sensor_std[sensor_type]['nz']
 
         if sensor_type == DataType.UWB:
-            self.anchor_pos = data.extra
+            self.anchor_pos = data.extra['anchor']
+            self.sensor_offset = data.extra['sensor_offset']
+
+    def rotation_matrix(self, angle):
+        s = np.sin(angle)
+        c = np.cos(angle)
+
+        return [[c, -s], [s, c]]
 
     def compute_sigma_z(self, sigma_x):
         sigma = np.zeros((self.nz, self.N_SIGMA))
@@ -41,7 +48,15 @@ class MeasurementPredictor:
                 sigma[0, i] = sigma_x[0, i]  # px
                 sigma[1, i] = sigma_x[1, i]  # py
             elif self.current_type == DataType.UWB:
-                distance = np.linalg.norm(sigma_x[:2, i] - self.anchor_pos)
+                sensor_pose = sigma_x[:2, i]
+
+                if self.sensor_offset is not None:
+                    rot = self.rotation_matrix(sigma_x[3, i])
+
+                    offset_rot = np.matmul(rot, self.sensor_offset)
+                    sensor_pose += offset_rot
+
+                distance = np.linalg.norm(sensor_pose - self.anchor_pos)
 
                 sigma[0, i] = distance  # px
 
