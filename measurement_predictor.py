@@ -82,11 +82,16 @@ class MeasurementPredictor:
 
         return S
 
+    def compute_S_nump(self, sigma, z):
+        sub = np.subtract(sigma.T, z).T
+
+        return (np.matmul(self.WEIGHTS * sub, sub.T)) + self.R
+
     def process(self, sigma_x, data):
         self.initialize(data)
         self.sigma_z = self.compute_sigma_z(sigma_x)
         self.z = self.compute_z(self.sigma_z)
-        self.S = self.compute_S(self.sigma_z, self.z)
+        self.S = self.compute_S_nump(self.sigma_z, self.z)
 
     def compute_R_matrix(self):
         for value in self.sensor_std:
