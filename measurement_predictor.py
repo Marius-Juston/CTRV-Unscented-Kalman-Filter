@@ -43,28 +43,6 @@ class MeasurementPredictor:
     def compute_sigma_z(self, sigma_x):
         sigma = np.zeros((self.nz, self.N_SIGMA))
 
-        for i in range(self.N_SIGMA):
-            if self.current_type == DataType.LIDAR:
-                sigma[0, i] = sigma_x[0, i]  # px
-                sigma[1, i] = sigma_x[1, i]  # py
-            elif self.current_type == DataType.UWB:
-                sensor_pose = sigma_x[:2, i]
-
-                if self.sensor_offset is not None:
-                    rot = self.rotation_matrix(sigma_x[3, i])
-
-                    offset_rot = np.matmul(rot, self.sensor_offset)
-                    sensor_pose += offset_rot
-
-                distance = np.linalg.norm(sensor_pose - self.anchor_pos)
-
-                sigma[0, i] = distance  # px
-
-        return sigma
-
-    def compute_sigma_z_numpy(self, sigma_x):
-        sigma = np.zeros((self.nz, self.N_SIGMA))
-
         if self.current_type == DataType.LIDAR:
             sigma[0] = sigma_x[0]  # px
             sigma[1] = sigma_x[1]  # py
@@ -86,38 +64,18 @@ class MeasurementPredictor:
         return sigma
 
     def compute_z(self, sigma):
-        z = np.zeros(self.nz)
-
-        for i in range(self.N_SIGMA):
-            z += self.WEIGHTS[i] * sigma[:, i]
-
-        return z
-
-    def compute_z_numpy(self, sigma):
         return np.dot(sigma, self.WEIGHTS)
 
     def compute_S(self, sigma, z):
-        S = np.zeros((self.nz, self.nz))
-
-        for i in range(self.N_SIGMA):
-            dz = sigma[:, i] - z
-
-            S += self.WEIGHTS[i] * np.outer(dz, dz)
-
-        S += self.R
-
-        return S
-
-    def compute_S_nump(self, sigma, z):
         sub = np.subtract(sigma.T, z).T
 
         return (np.matmul(self.WEIGHTS * sub, sub.T)) + self.R
 
     def process(self, sigma_x, data):
         self.initialize(data)
-        self.sigma_z = self.compute_sigma_z_numpy(sigma_x)
-        self.z = self.compute_z_numpy(self.sigma_z)
-        self.S = self.compute_S_nump(self.sigma_z, self.z)
+        self.sigma_z = self.compute_sigma_z(sigma_x)
+        self.z = self.compute_z(self.sigma_z)
+        self.S = self.compute_S(self.sigma_z, self.z)
 
     def compute_R_matrix(self):
         for value in self.sensor_std:

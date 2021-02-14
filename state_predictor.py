@@ -1,7 +1,5 @@
 import numpy as np
 
-from util import normalize
-
 
 class StatePredictor:
     def __init__(self, NX, N_SIGMA, N_AUGMENTED, VAR_SPEED_NOISE, VAR_YAW_RATE_NOISE, SCALE, WEIGHTS):
@@ -22,26 +20,6 @@ class StatePredictor:
         self.YAW_RATE_THRESHOLD = 0.001
 
     def compute_augmented_sigma(self, x, P):
-        augmented_sigma = np.zeros((self.N_AUGMENTED, self.N_SIGMA))
-        augmented_x = np.zeros(self.N_AUGMENTED)
-        augmented_P = np.zeros((self.N_AUGMENTED, self.N_AUGMENTED))
-
-        augmented_x[:self.NX] = x
-        augmented_P[:self.NX, :self.NX] = P
-        augmented_P[self.NX, self.NX] = self.VAR_SPEED_NOISE
-        augmented_P[self.NX + 1, self.NX + 1] = self.VAR_YAW_RATE_NOISE
-
-        L = np.linalg.cholesky(augmented_P)
-        augmented_sigma[:, 0] = augmented_x
-
-        for c in range(self.N_AUGMENTED):
-            i = c + 1
-            augmented_sigma[:, i] = augmented_x + self.SCALE * L[:, c]
-            augmented_sigma[:, i + self.N_AUGMENTED] = augmented_x - self.SCALE * L[:, c]
-
-        return augmented_sigma
-
-    def compute_augmented_sigma_numpy(self, x, P):
         augmented_x = np.zeros(self.N_AUGMENTED)
         augmented_P = np.zeros((self.N_AUGMENTED, self.N_AUGMENTED))
 
@@ -119,27 +97,9 @@ class StatePredictor:
         return predicted_sigma
 
     def predict_x(self, predicted_sigma):
-        predicted_x = np.zeros(self.NX)
-
-        for i in range(self.N_SIGMA):
-            predicted_x += self.WEIGHTS[i] * predicted_sigma[:, i]
-
-        return predicted_x
-
-    def predict_x_numpy(self, predicted_sigma):
         return np.dot(predicted_sigma, self.WEIGHTS)
 
     def predict_P(self, predicted_sigma, predicted_x):
-        predicted_P = np.zeros((self.NX, self.NX))
-
-        for i in range(self.N_SIGMA):
-            dx = (predicted_sigma[:, i] - predicted_x)
-            dx[3] = normalize(dx[3])
-            predicted_P += self.WEIGHTS[i] * np.outer(dx, dx)
-
-        return predicted_P
-
-    def predict_P_numpy(self, predicted_sigma, predicted_x):
         sub = np.subtract(predicted_sigma.T, predicted_x).T
         mask = np.abs(sub[3]) > np.pi
         sub[3, mask] = sub[3, mask] % (np.pi * 2)
@@ -147,7 +107,7 @@ class StatePredictor:
         return np.matmul(self.WEIGHTS * sub, sub.T)
 
     def process(self, x, P, dt):
-        augmented_sigma = self.compute_augmented_sigma_numpy(x, P)
+        augmented_sigma = self.compute_augmented_sigma(x, P)
         self.sigma = self.predict_sigma(augmented_sigma, dt)
-        self.x = self.predict_x_numpy(self.sigma)
-        self.P = self.predict_P_numpy(self.sigma, self.x)
+        self.x = self.predict_x(self.sigma)
+        self.P = self.predict_P(self.sigma, self.x)
