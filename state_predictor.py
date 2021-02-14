@@ -117,8 +117,15 @@ class StatePredictor:
 
         return predicted_P
 
+    def predict_P_numpy(self, predicted_sigma, predicted_x):
+        sub = np.subtract(predicted_sigma.T, predicted_x).T
+        mask = np.abs(sub[3]) > np.pi
+        sub[3, mask] = sub[3, mask] % (np.pi * 2)
+
+        return np.matmul(self.WEIGHTS * sub, sub.T)
+
     def process(self, x, P, dt):
         augmented_sigma = self.compute_augmented_sigma(x, P)
         self.sigma = self.predict_sigma(augmented_sigma, dt)
         self.x = self.predict_x(self.sigma)
-        self.P = self.predict_P(self.sigma, self.x)
+        self.P = self.predict_P_numpy(self.sigma, self.x)
