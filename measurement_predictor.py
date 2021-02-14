@@ -93,6 +93,9 @@ class MeasurementPredictor:
 
         return z
 
+    def compute_z_numpy(self, sigma):
+        return np.dot(sigma, self.WEIGHTS)
+
     def compute_S(self, sigma, z):
         S = np.zeros((self.nz, self.nz))
 
@@ -113,7 +116,7 @@ class MeasurementPredictor:
     def process(self, sigma_x, data):
         self.initialize(data)
         self.sigma_z = self.compute_sigma_z_numpy(sigma_x)
-        self.z = self.compute_z(self.sigma_z)
+        self.z = self.compute_z_numpy(self.sigma_z)
         self.S = self.compute_S_nump(self.sigma_z, self.z)
 
     def compute_R_matrix(self):
