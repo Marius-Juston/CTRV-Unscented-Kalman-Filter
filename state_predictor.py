@@ -41,6 +41,25 @@ class StatePredictor:
 
         return augmented_sigma
 
+    def compute_augmented_sigma_numpy(self, x, P):
+        augmented_x = np.zeros(self.N_AUGMENTED)
+        augmented_P = np.zeros((self.N_AUGMENTED, self.N_AUGMENTED))
+
+        augmented_x[:self.NX] = x
+        augmented_P[:self.NX, :self.NX] = P
+        augmented_P[self.NX, self.NX] = self.VAR_SPEED_NOISE
+        augmented_P[self.NX + 1, self.NX + 1] = self.VAR_YAW_RATE_NOISE
+
+        L = np.linalg.cholesky(augmented_P)
+        augmented_sigma = np.repeat(augmented_x[None], self.N_SIGMA, axis=0).T
+
+        scaled_L = self.SCALE * L
+
+        augmented_sigma[:, 1:self.N_AUGMENTED + 1] += scaled_L
+        augmented_sigma[:, self.N_AUGMENTED + 1:] -= scaled_L
+
+        return augmented_sigma
+
     def predict_sigma(self, augmented_sigma, dt):
         predicted_sigma = np.zeros((self.NX, self.N_SIGMA))
 
@@ -107,6 +126,9 @@ class StatePredictor:
 
         return predicted_x
 
+    def predict_x_numpy(self, predicted_sigma):
+        return np.dot(predicted_sigma, self.WEIGHTS)
+
     def predict_P(self, predicted_sigma, predicted_x):
         predicted_P = np.zeros((self.NX, self.NX))
 
@@ -125,7 +147,7 @@ class StatePredictor:
         return np.matmul(self.WEIGHTS * sub, sub.T)
 
     def process(self, x, P, dt):
-        augmented_sigma = self.compute_augmented_sigma(x, P)
+        augmented_sigma = self.compute_augmented_sigma_numpy(x, P)
         self.sigma = self.predict_sigma(augmented_sigma, dt)
-        self.x = self.predict_x(self.sigma)
+        self.x = self.predict_x_numpy(self.sigma)
         self.P = self.predict_P_numpy(self.sigma, self.x)
