@@ -62,6 +62,29 @@ class MeasurementPredictor:
 
         return sigma
 
+    def compute_sigma_z_numpy(self, sigma_x):
+        sigma = np.zeros((self.nz, self.N_SIGMA))
+
+        if self.current_type == DataType.LIDAR:
+            sigma[0] = sigma_x[0]  # px
+            sigma[1] = sigma_x[1]  # py
+        elif self.current_type == DataType.UWB:
+            sensor_pose = sigma_x[:2]
+
+            if self.sensor_offset is not None:
+                angles = np.unique(sigma_x[3])
+
+                for angle in angles:
+                    rot = self.rotation_matrix(angle)
+                    offset_rot = np.matmul(rot, self.sensor_offset).reshape((-1, 1))
+
+                    sensor_pose[:, sigma_x[3] == angle] += offset_rot
+
+            distances = np.linalg.norm(sensor_pose - self.anchor_pos.reshape((-1, 1)), axis=0)
+            sigma[0] = distances
+
+        return sigma
+
     def compute_z(self, sigma):
         z = np.zeros(self.nz)
 
@@ -89,7 +112,7 @@ class MeasurementPredictor:
 
     def process(self, sigma_x, data):
         self.initialize(data)
-        self.sigma_z = self.compute_sigma_z(sigma_x)
+        self.sigma_z = self.compute_sigma_z_numpy(sigma_x)
         self.z = self.compute_z(self.sigma_z)
         self.S = self.compute_S_nump(self.sigma_z, self.z)
 
