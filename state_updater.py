@@ -1,5 +1,7 @@
 import numpy as np
 
+from datapoint import DataType
+
 
 class StateUpdater:
     def __init__(self, NX, N_SIGMA, WEIGHTS) -> None:
@@ -29,7 +31,7 @@ class StateUpdater:
 
         dz = z - predicted_z
 
-        if (data_type == DataType.ODOMETRY):
+        if data_type == DataType.ODOMETRY:
             dz[3] = (dz[3] + np.pi) % (2 * np.pi) - np.pi
 
         self.x = predicted_x + np.matmul(K, dz)
