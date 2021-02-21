@@ -1,5 +1,6 @@
 import numpy as np
 
+from datapoint import DataPoint
 from measurement_predictor import MeasurementPredictor
 from state_predictor import StatePredictor
 from state_updater import StateUpdater
@@ -68,10 +69,7 @@ class FusionUKF:
             self.initialize(data.measurement_data, np.eye(self.NX), data.timestamp)
 
     def process(self, data):
-        dt = data.timestamp - self.timestamp  # seconds
-
-        if (dt < 0.001):
-            dt = 0.001
+        dt = (data.timestamp - self.timestamp) / 1e9  # seconds
 
         # STATE PREDICTION
         # get predicted state and covariance of predicted state, predicted sigma points in state space
