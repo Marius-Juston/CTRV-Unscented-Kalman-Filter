@@ -1,8 +1,9 @@
 import numpy as np
 
 
-def normalize(angle):
-    if abs(angle) > np.pi:
-        return angle % (2 * np.pi)
+def normalize(d, index):
+    d[index] = (d[index] + np.pi) % (2 * np.pi) - np.pi
 
-    return angle
+    # d[index] %= 2 * np.pi
+    # mask = np.abs(d[index]) > np.pi
+    # d[index, mask] -= (np.pi * 2)

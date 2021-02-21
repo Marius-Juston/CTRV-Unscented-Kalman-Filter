@@ -1,19 +1,19 @@
 import numpy as np
 
-from datapoint import DataPoint
 from measurement_predictor import MeasurementPredictor
 from state_predictor import StatePredictor
 from state_updater import StateUpdater
 
 
 class FusionUKF:
-    def __init__(self, sensor_std, speed_noise_std=.9, yaw_rate_noise_std=.6, alpha=1, beta=0) -> None:
-        super().__init__()
+    def __init__(self, sensor_std, speed_noise_std=.9, yaw_rate_noise_std=.6, alpha=1, beta=0):
+        # ODOMETRY: beta=0.3
+        # UWB: beta=0.3
 
         self.initialized = False
 
-        # Number of total states X, Y, velocity, yaw, yaw rate
-        self.NX = 5
+        # Number of total states X, Y, Z, velocity, yaw, yaw rate
+        self.NX = 6
 
         # Settings values -----------------------------------
         self.N_AUGMENTED = self.NX + 2
@@ -46,6 +46,7 @@ class FusionUKF:
 
         self.x = np.zeros(self.NX)
         self.P = np.eye(self.NX)
+        self.nis = 0
 
         self.state_predictor = StatePredictor(self.NX, self.N_SIGMA, self.N_AUGMENTED, self.SPEED_NOISE_VAR,
                                               self.YAW_RATE_NOISE_VAR, self.SCALE, self.WEIGHTS)
@@ -66,8 +67,11 @@ class FusionUKF:
         else:
             self.initialize(data.measurement_data, np.eye(self.NX), data.timestamp)
 
-    def process(self, data: DataPoint):
+    def process(self, data):
         dt = data.timestamp - self.timestamp  # seconds
+
+        if (dt < 0.001):
+            dt = 0.001
 
         # STATE PREDICTION
         # get predicted state and covariance of predicted state, predicted sigma points in state space

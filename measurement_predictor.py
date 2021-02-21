@@ -1,12 +1,12 @@
 import numpy as np
 
 from datapoint import DataType
+from state import UKFState
+from util import normalize
 
 
 class MeasurementPredictor:
-    def __init__(self, sensor_std, N_SIGMA, WEIGHTS) -> None:
-        super().__init__()
-
+    def __init__(self, sensor_std, N_SIGMA, WEIGHTS):
         self.sensor_std = sensor_std
 
         self.compute_R_matrix()
@@ -38,28 +38,37 @@ class MeasurementPredictor:
         s = np.sin(angle)
         c = np.cos(angle)
 
-        return [[c, -s], [s, c]]
+        return [[c, -s, 0],
+                [s, c, 0],
+                [0, 0, 1]]
 
     def compute_sigma_z(self, sigma_x):
         sigma = np.zeros((self.nz, self.N_SIGMA))
 
         if self.current_type == DataType.LIDAR:
-            sigma[0] = sigma_x[0]  # px
-            sigma[1] = sigma_x[1]  # py
+            sigma[UKFState.X] = sigma_x[UKFState.X]  # px
+            sigma[UKFState.Y] = sigma_x[UKFState.Y]  # py
         elif self.current_type == DataType.UWB:
-            sensor_pose = sigma_x[:2]
+            sensor_pose = sigma_x[:UKFState.Z]
 
             if self.sensor_offset is not None:
-                angles = np.unique(sigma_x[3])
+                angles = np.unique(sigma_x[UKFState.YAW])
 
                 for angle in angles:
                     rot = self.rotation_matrix(angle)
                     offset_rot = np.matmul(rot, self.sensor_offset).reshape((-1, 1))
 
-                    sensor_pose[:, sigma_x[3] == angle] += offset_rot
+                    sensor_pose[:, sigma_x[UKFState.YAW] == angle] += offset_rot
 
             distances = np.linalg.norm(sensor_pose - self.anchor_pos.reshape((-1, 1)), axis=0)
             sigma[0] = distances
+        elif self.current_type == DataType.ODOMETRY:
+            sigma[UKFState.X] = sigma_x[UKFState.X]  # px
+            sigma[UKFState.Y] = sigma_x[UKFState.Y]  # py
+            sigma[UKFState.Z] = sigma_x[UKFState.Z]  # pz
+            sigma[UKFState.V] = sigma_x[UKFState.V]  # v
+            sigma[UKFState.YAW] = sigma_x[UKFState.YAW]  # theta
+            sigma[UKFState.YAW_RATE] = sigma_x[UKFState.YAW_RATE]  # theta_yaw
 
         return sigma
 
@@ -68,6 +77,8 @@ class MeasurementPredictor:
 
     def compute_S(self, sigma, z):
         sub = np.subtract(sigma.T, z).T
+
+        normalize(sub, UKFState.YAW)
 
         return (np.matmul(self.WEIGHTS * sub, sub.T)) + self.R
 

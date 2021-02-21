@@ -1,10 +1,11 @@
 import numpy as np
 
+from state import UKFState
+from util import normalize
+
 
 class StatePredictor:
     def __init__(self, NX, N_SIGMA, N_AUGMENTED, VAR_SPEED_NOISE, VAR_YAW_RATE_NOISE, SCALE, WEIGHTS):
-        super().__init__()
-
         self.WEIGHTS = WEIGHTS
         self.NX = NX
         self.SCALE = SCALE
@@ -41,13 +42,14 @@ class StatePredictor:
     def predict_sigma(self, augmented_sigma, dt):
         predicted_sigma = np.zeros((self.NX, self.N_SIGMA))
 
-        px = augmented_sigma[0]
-        py = augmented_sigma[1]
-        speed = augmented_sigma[2]
-        yaw = augmented_sigma[3]
-        yaw_rate = augmented_sigma[4]
-        speed_noise = augmented_sigma[5]
-        yaw_rate_noise = augmented_sigma[6]
+        px = augmented_sigma[UKFState.X]
+        py = augmented_sigma[UKFState.Y]
+        pz = augmented_sigma[UKFState.Z]
+        speed = augmented_sigma[UKFState.V]
+        yaw = augmented_sigma[UKFState.YAW]
+        yaw_rate = augmented_sigma[UKFState.YAW_RATE]
+        speed_noise = augmented_sigma[UKFState.LIN_ACCEL]
+        yaw_rate_noise = augmented_sigma[UKFState.YAW_ACCEL]
 
         # PREDICT NEXT STEP USING CTRV Model
 
@@ -86,11 +88,12 @@ class StatePredictor:
         p_px[mask_n] = px[mask_n] + k * (np.sin(theta) - sin_yaw[mask_n]) + p_noise[mask_n] * cos_yaw[mask_n]
         p_py[mask_n] = py[mask_n] + k * (cos_yaw[mask_n] - np.cos(theta)) + p_noise[mask_n] * sin_yaw[mask_n]
 
-        predicted_sigma[0] = p_px
-        predicted_sigma[1] = p_py
-        predicted_sigma[2] = p_speed
-        predicted_sigma[3] = p_yaw
-        predicted_sigma[4] = p_yaw_rate
+        predicted_sigma[UKFState.X] = p_px
+        predicted_sigma[UKFState.Y] = p_py
+        predicted_sigma[UKFState.Z] = pz
+        predicted_sigma[UKFState.V] = p_speed
+        predicted_sigma[UKFState.YAW] = p_yaw
+        predicted_sigma[UKFState.YAW_RATE] = p_yaw_rate
 
         # ------------------
 
@@ -102,9 +105,7 @@ class StatePredictor:
     def predict_P(self, predicted_sigma, predicted_x):
         sub = np.subtract(predicted_sigma.T, predicted_x).T
 
-        sub[3] %= 2 * np.pi
-        mask = np.abs(sub[3]) > np.pi
-        sub[3, mask] -= (np.pi * 2)
+        normalize(sub, UKFState.YAW)
 
         return np.matmul(self.WEIGHTS * sub, sub.T)
 
@@ -112,9 +113,5 @@ class StatePredictor:
         augmented_sigma = self.compute_augmented_sigma(x, P)
         self.sigma = self.predict_sigma(augmented_sigma, dt)
         self.x = self.predict_x(self.sigma)
-
-        self.x[3] %= 2 * np.pi
-        if self.x[3] > np.pi:
-            self.x[3] -= (2 * np.pi)
 
         self.P = self.predict_P(self.sigma, self.x)
