@@ -22,6 +22,9 @@ def define_test_data():
     sensor_offset = np.array([0, 2, 0])
 
     with open(file, 'r') as file_data:
+        prev_yaw = None
+        prev_d = None
+
         for line in file_data.readlines():
             line = line.split()
 
@@ -45,9 +48,24 @@ def define_test_data():
                 pose = np.array([x, y, 0]) + np.matmul(rotation_matrix(yaw), sensor_offset)
 
                 distance = np.linalg.norm(pose - anchor_pos2) + noise
-                sensor_data.append(DataPoint(DataType.UWB, np.array([distance]), timestamp,
+                # sensor_data.append(DataPoint(DataType.UWB, np.array([distance]), timestamp,
+                #                              extra={"anchor": anchor_pos2, "sensor_offset": sensor_offset}))
+
+                # print(yaw)
+
+                v = np.sqrt(vx ** 2 + vy ** 2)
+
+                if prev_d is None:
+                    prev_d = timestamp
                 if prev_yaw is None:
                     prev_yaw = yaw
+
+                dt = timestamp - prev_d
+
+                if dt > 0:
+                    yaw_rate = (yaw - prev_yaw) / dt
+                else:
+                    yaw_rate = 0
 
                 prev_yaw = yaw
 
@@ -60,6 +78,9 @@ def define_test_data():
                 line.pop(0)
 
                 timestamp = float(line.pop(0)) / 1e6
+
+                if prev_d == 0:
+                    prev_d = timestamp
 
                 x = float(line.pop(0))
                 y = float(line.pop(0))
@@ -103,6 +124,10 @@ if __name__ == '__main__':
         DataType.UWB: {
             'std': [.25],
             'nz': 1
+        },
+        DataType.ODOMETRY: {
+            'std': [1, 1, 1, 1, 1, 1],
+            'nz': 6
         }
     }
 
