@@ -178,7 +178,12 @@ if __name__ == '__main__':
     fig.tight_layout()
 
     ground_xy = np.array([[g.measurement_data[0], g.measurement_data[1]] for g in ground_truth])
-    plt.plot(ground_xy[:, 0], ground_xy[:, 1], color=[1, 0, 0, 1])
+    plt.plot(ground_xy[:, 0], ground_xy[:, 1], color=[1, 0, 0, 1], label='ground_truth')
 
-    plt.plot(x, y, color=[0, 1, 0, 1])
+    ground_xy = np.array([[g.measurement_data[0], g.measurement_data[1]] for g in sensor_data if g.data_type == DataType.ODOMETRY])
+    plt.plot(ground_xy[:, 0], ground_xy[:, 1], color=[0, 0, 0, 1], label='odometry')
+
+    plt.plot(x, y, color=[0, 1, 0, 1], label='fusion')
+
+    ax.legend()
     plt.show()
