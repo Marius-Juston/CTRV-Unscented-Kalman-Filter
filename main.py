@@ -3,8 +3,8 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-from datapoint import DataPoint, DataType
-from fusion_ukf import FusionUKF
+from ukf.datapoint import DataPoint, DataType
+from ukf.fusion_ukf import FusionUKF
 
 
 def define_test_data():
@@ -14,12 +14,12 @@ def define_test_data():
     sensor_data = []
     sensor_offset_pose = []
 
-    anchor_pos = np.array([5, 6])
-    anchor_pos2 = np.array([10, 20])
+    anchor_pos = np.array([5, 6, 0])
+    anchor_pos2 = np.array([10, 20, 0])
     # anchor_pos2 = np.array([10,-15])
     # anchor_pos2 = np.array([1,2])
 
-    sensor_offset = np.array([0, .2])
+    sensor_offset = np.array([0, 2, 0])
 
     with open(file, 'r') as file_data:
         for line in file_data.readlines():
@@ -42,10 +42,16 @@ def define_test_data():
                 vy = float(line.pop(0))
                 yaw = float(line.pop(0))
 
-                pose = np.array([x, y]) + np.matmul(rotation_matrix(yaw), sensor_offset)
+                pose = np.array([x, y, 0]) + np.matmul(rotation_matrix(yaw), sensor_offset)
 
                 distance = np.linalg.norm(pose - anchor_pos2) + noise
                 sensor_data.append(DataPoint(DataType.UWB, np.array([distance]), timestamp,
+                if prev_yaw is None:
+                    prev_yaw = yaw
+
+                prev_yaw = yaw
+
+                sensor_data.append(DataPoint(DataType.ODOMETRY, np.array([x, y, 0, v, yaw, yaw_rate]), timestamp,
                                              extra={"anchor": anchor_pos2, "sensor_offset": sensor_offset}))
 
             else:
@@ -61,7 +67,7 @@ def define_test_data():
                 vy = float(line.pop(0))
                 yaw = float(line.pop(0))
 
-                pose = np.array([x, y]) + np.matmul(rotation_matrix(yaw), sensor_offset)
+                pose = np.array([x, y, 0]) + np.matmul(rotation_matrix(yaw), sensor_offset)
                 distance = np.linalg.norm(pose - anchor_pos) + noise
 
                 sensor_data.append(DataPoint(DataType.UWB, np.array([distance]), timestamp,
@@ -81,7 +87,9 @@ def rotation_matrix(angle):
     s = np.sin(angle)
     c = np.cos(angle)
 
-    return [[c, -s], [s, c]]
+    return [[c, -s, 0],
+            [s, c, 0],
+            [0, 0, 1]]
 
 
 if __name__ == '__main__':
@@ -104,7 +112,9 @@ if __name__ == '__main__':
     plt.plot(ground_xy[:, 0], ground_xy[:, 1], color=[1, 0, 0, 1])
     plt.plot(sensor_offset_pose[:, 0], sensor_offset_pose[:, 1], label="sensor", c='b')
 
-    filter.initialize(ground_truth[0].measurement_data, np.eye(5), ground_truth[0].timestamp)
+    filter.initialize(np.array([*ground_truth[0].measurement_data[:2], 0, *ground_truth[0].measurement_data[2:]]),
+                      np.eye(6) * 1,
+                      ground_truth[0].timestamp)
     # scatter_xy = np.array([[g.measurement_data[0], g.measurement_data[1]] for g in sensor_data])
     # plt.scatter(scatter_xy[:, 0], scatter_xy[:, 1], color=[0, 0, 1, .5])
 
