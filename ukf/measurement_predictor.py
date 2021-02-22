@@ -49,7 +49,7 @@ class MeasurementPredictor:
             sigma[UKFState.X] = sigma_x[UKFState.X]  # px
             sigma[UKFState.Y] = sigma_x[UKFState.Y]  # py
         elif self.current_type == DataType.UWB:
-            sensor_pose = sigma_x[:UKFState.Z]
+            sensor_pose = np.copy(sigma_x[:UKFState.Z + 1])
 
             if self.sensor_offset is not None:
                 angles = np.unique(sigma_x[UKFState.YAW])
