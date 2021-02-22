@@ -35,6 +35,18 @@ def calculate_RMSE(estimations, ground_truths):
     rmse = np.sqrt(rmse)
     return rmse
 
+def max_diff(estimations, ground_truths):
+    max_error = np.zeros(estimations[0].size)
+
+    for estimation, ground_truth in zip(estimations, ground_truths):
+        diff = estimation - ground_truth
+        diff[UKFState.YAW] %= (2 * np.pi)
+        diff = abs(diff)
+
+        max_error = np.fmax(max_error, diff)
+
+    return max_error
+
 
 def define_test_data():
     file = 'data/out.csv'
