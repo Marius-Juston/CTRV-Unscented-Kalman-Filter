@@ -1,9 +1,8 @@
 import numpy as np
 
-from datapoint import DataPoint
-from measurement_predictor import MeasurementPredictor
-from state_predictor import StatePredictor
-from state_updater import StateUpdater
+from ukf.measurement_predictor import MeasurementPredictor
+from ukf.state_predictor import StatePredictor
+from ukf.state_updater import StateUpdater
 
 
 class FusionUKF:

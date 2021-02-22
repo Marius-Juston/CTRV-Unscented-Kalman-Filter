@@ -1,7 +1,7 @@
 import numpy as np
 
-from state import UKFState
-from util import normalize
+from ukf.state import UKFState
+from ukf.util import normalize
 
 
 class StatePredictor:
