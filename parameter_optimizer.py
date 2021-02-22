@@ -52,6 +52,7 @@ def run(sensor_data, ground_truth, first_timestamp, parameters, weights=(1, 1, 1
 
     print("X                   Y                  Z                   V                   YAW                YAW RATE")
     rmse = calculate_RMSE(estimations, ground_estimation)
+    # rmse = max_diff(estimations, ground_estimation)
     print(*rmse)
 
     return np.dot(rmse, weights)
@@ -60,43 +61,69 @@ def run(sensor_data, ground_truth, first_timestamp, parameters, weights=(1, 1, 1
 def twiddle():
     ground_truth, sensor_data, first_timestamp = define_test_data()
 
+    out = 'parameter_output.txt'
+    sum_weighs = [1, 1, 1, 1, 1, 1]
+
     # Choose an initialization parameter vector
-    p = np.ones(17)
+    p = [9.0001, 13.0, 10.0001, 15.9001, 3.0001, 1.0001, 2.0001, 4.9001, 5.9001, 1.0, 0, 0.0001, 0.0001, 0.0001, 2.0001,
+         0.0001, 0.0001]
     p[10] = 0
     # Define potential changes
-    dp = np.ones(17)
+    dp = np.ones(17) * 1
+    dp[9] = 1
     # Calculate the error
-    best_err = run(sensor_data, ground_truth, first_timestamp, p)
+    best_err = run(sensor_data, ground_truth, first_timestamp, p, sum_weighs)
 
     threshold = 0.001
 
     print(best_err, ":", p)
+    best_p = p
 
-    while sum(dp) > threshold:
-        for i in range(len(p)):
-            p[i] += dp[i]
-            p[9] = np.clip(p[9], 0, 1)
-            err = run(sensor_data, ground_truth, first_timestamp, p)
+    with open(out, 'w') as out_file:
+        out_file.write(f"{best_err}:" + ", ".join(map(str, best_p)) + "\n")
+        out_file.flush()
 
-            if err < best_err:  # There was some improvement
-                best_err = err
-                dp[i] *= 1.1
-            else:  # There was no improvement
-                p[i] -= 2 * dp[i]  # Go into the other direction
+        while np.all(dp > threshold):
+            for i in range(len(p)):
+                p[i] += dp[i]
                 p[9] = np.clip(p[9], 0, 1)
-                err = run(sensor_data, ground_truth, first_timestamp, p)
+                if i != 10 and p[i] < 0:
+                    p[i] = 0.0001
+                err = run(sensor_data, ground_truth, first_timestamp, p, sum_weighs)
 
-                if err < best_err:  # There was an improvement
+                if err < best_err:  # There was some improvement
                     best_err = err
-                    dp[i] *= 1.05
-                else:  # There was no improvement
-                    p[i] += dp[i]
-                    p[9] = np.clip(p[9], 0, 1)
-                    # As there was no improvement, the step size in either
-                    # direction, the step size might simply be too big.
-                    dp[i] *= 0.95
+                    dp[i] *= 1.1
 
-            print(best_err, ":", p)
+                    best_p = p
+
+                    out_file.write(f"{best_err}:" + ", ".join(map(str, best_p)) + "\n")
+                    out_file.flush()
+                else:  # There was no improvement
+                    p[i] -= 2 * dp[i]  # Go into the other direction
+                    p[9] = np.clip(p[9], 0, 1)
+                    if i != 10 and p[i] < 0:
+                        p[i] = 0.0001
+                    err = run(sensor_data, ground_truth, first_timestamp, p, sum_weighs)
+
+                    if err < best_err:  # There was an improvement
+                        best_err = err
+                        dp[i] *= 1.05
+                        best_p = p
+                        out_file.write(f"{best_err}:" + ", ".join(map(str, best_p)) + "\n")
+                        out_file.flush()
+                    else:  # There was no improvement
+                        p[i] += dp[i]
+                        p[9] = np.clip(p[9], 0, 1)
+                        if i != 10 and p[i] < 0:
+                            p[i] = 0.0001
+                        # As there was no improvement, the step size in either
+                        # direction, the step size might simply be too big.
+                        dp[i] *= 0.95
+
+                print(best_err, ":", best_p, sum(dp), dp)
+
+        # out_file.write(f"{best_err}:" + ", ".join(map(str, best_p)) + "\n")
 
 
 if __name__ == '__main__':
