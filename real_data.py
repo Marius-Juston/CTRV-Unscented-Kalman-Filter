@@ -117,9 +117,24 @@ if __name__ == '__main__':
 
     print(len(ground_truth), len(sensor_data))
 
-    fusion = FusionUKF(sensor_std, .1, .1)
+    fusion = FusionUKF(sensor_std,  4.9001, 6.9001, 1, 0)
+    #
+    # noise = np.array([
+    #     np.random.normal(0, .15),
+    #     np.random.normal(0, .15),
+    #     np.random.normal(0, .05),
+    #     np.random.normal(0, .1),
+    #     np.random.normal(0, 0.0872665),
+    #     np.random.normal(0, 0.05),
+    #
+    # ])
+    noise = np.zeros(6)
 
-    fusion.initialize(ground_truth[0].measurement_data, np.diag([.1, .1, 1, 1, 1, 1]), first_timestamp)
+    print(noise)
+
+    fusion.initialize(ground_truth[0].measurement_data + noise, np.diag(
+        [.0001, .0001, .0001, 2.0001, .0001,
+         .0001]), first_timestamp)
 
     x = []
     y = []
