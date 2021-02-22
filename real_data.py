@@ -49,7 +49,7 @@ def max_diff(estimations, ground_truths):
 
 
 def define_test_data():
-    file = 'data/out.csv'
+    file = 'data/complex_out.csv'
 
     ground_truth = []
     sensor_data = []
@@ -106,11 +106,12 @@ if __name__ == '__main__':
             'nz': 2
         },
         DataType.UWB: {
-            'std': [.05],
+            'std': [9.0001],
             'nz': 1
         },
         DataType.ODOMETRY: {
-            'std': [1, 1, .1, .1, .1, .1],
+            'std': [13.0, 10.0001, 16.9001, 3.0001, 1.0001,
+                    2.0001],
             'nz': 6
         }
     }
@@ -170,7 +171,9 @@ if __name__ == '__main__':
 
     print(len(estimations), len(ground_estimation))
     print("X                   Y                  Z                   V                   YAW                YAW RATE")
-    print(*calculate_RMSE(estimations, ground_estimation))
+    est = calculate_RMSE(estimations, ground_estimation)
+    print(*est, sum(est))
+    print(*max_diff(estimations, ground_estimation))
 
     ax: Axes = plt.gca()
     ax.set_aspect("equal")
