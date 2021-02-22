@@ -78,7 +78,8 @@ class MeasurementPredictor:
     def compute_S(self, sigma, z):
         sub = np.subtract(sigma.T, z).T
 
-        normalize(sub, UKFState.YAW)
+        if self.current_type == DataType.ODOMETRY:
+            normalize(sub, UKFState.YAW)
 
         return (np.matmul(self.WEIGHTS * sub, sub.T)) + self.R
 
